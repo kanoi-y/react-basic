@@ -1,57 +1,72 @@
-import { useEffect, useState } from 'react';
+import { nanoid } from 'nanoid';
+import React, { useState } from 'react';
 import './App.css';
+import FilterButton from './components/FilterButton';
+import Form from './components/Form';
+import Todo from './components/Todo';
 
-function App() {
-  const [id, setId] = useState('deatiger');
-  const [name, setName] = useState('');
-  const ids = ['deatiger', 'gaearon', 'aws', 'google', 'facebook'];
-
-  const getRandomId = () => {
-    const _id = ids[Math.floor(Math.random() * ids.length)];
-    setId(_id);
-  };
-
-  useEffect(() => {
-    fetch(`https://api.github.com/users/${id}`)
-      .then((res) => res.json())
-      .then((data) => {
-        console.log(data);
-        setName(data.name);
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-  }, [id]);
-
+function App(props) {
+  const [tasks, setTasks] = useState(props.tasks);
+  function toggleTaskCompleted(id) {
+    const updatedTasks = tasks.map((task) => {
+      // if this task has the same ID as the edited task
+      if (id === task.id) {
+        // use object spread to make a new object
+        // whose `completed` prop has been inverted
+        return { ...task, completed: !task.completed };
+      }
+      return task;
+    });
+    setTasks(updatedTasks);
+  }
+  function deleteTask(id) {
+    const remainingTasks = tasks.filter((task) => id !== task.id);
+    setTasks(remainingTasks);
+  }
+  function editTask(id, newName) {
+    const editedTaskList = tasks.map((task) => {
+      // if this task has the same ID as the edited task
+      if (id === task.id) {
+        //
+        return { ...task, name: newName };
+      }
+      return task;
+    });
+    setTasks(editedTaskList);
+  }
+  const taskList = tasks.map((task) => (
+    <Todo
+      id={task.id}
+      key={task.id}
+      name={task.name}
+      completed={task.completed}
+      toggleTaskCompleted={toggleTaskCompleted}
+      deleteTask={deleteTask}
+      editTask={editTask}
+    />
+  ));
+  const tasksNoun = taskList.length !== 1 ? 'tasks' : 'task';
+  const headingText = `${taskList.length} ${tasksNoun} remaining`;
+  function addTask(name) {
+    const newTask = { id: 'todo-' + nanoid(), name: name, completed: false };
+    setTasks([...tasks, newTask]);
+  }
   return (
-    <div className="App">
-      <p>
-        {id}の、GitHub上の名前は{name} です。
-      </p>
-      <button onClick={getRandomId}>IDを変更</button>
-      {/* <div>{btnCount}</div>
-      <button onClick={CountUp}>count up!</button>
-      <button onClick={CountDown}>count down!</button> */}
-      {/* <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit
-          <code>src/App.js</code>
-          and save to reload.
-        </p>
-        <Article
-          title={'これがreactだ！！'}
-          content={'今日のトピックは、propsについて'}
-        />
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header> */}
+    <div className="todoapp stack-large">
+      <h1>TodoMatic</h1>
+      <Form addTask={addTask} />
+      <div className="filters btn-group stack-exception">
+        <FilterButton />
+        <FilterButton />
+        <FilterButton />
+      </div>
+      <h2 id="list-heading">{headingText}</h2>
+      <ul
+        className="todo-list stack-large stack-exception"
+        aria-labelledby="list-heading"
+      >
+        {taskList}
+      </ul>
     </div>
   );
 }
